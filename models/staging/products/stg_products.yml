@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: stg_products
+    description: "Staging layer for product data. 1 row per product_id."
+    columns:
+      - name: product_id
+        tests:
+          - unique
+          - not_null
+      - name: product_name
+        tests:
+          - not_null
+          
+      - name: renewal_flag
+        tests:          
+          - not_null

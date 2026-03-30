@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: int_policy_premiums
+    description: "Intermediate layer for the policy premium data."
+    columns:
+      - name: policy_id
+        tests:
+          - not_null
+      - name: product_id
+        tests:
+          - not_null
+      - name: premium_amount
+        tests:
+          - not_null
+      - name: premium_year
+        tests:
+          - not_null
+      - name: premium_month
+        tests:
+          - not_null
+      - name: payment_method
+        tests:
+          - not_null

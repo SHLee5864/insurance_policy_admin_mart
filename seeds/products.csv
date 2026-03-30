@@ -1,0 +1,11 @@
+product_id,product_name,renewal_flag
+PRD01,Life Basic,Y
+PRD02,Life Plus,Y
+PRD03,Accident Basic,Y
+PRD04,Accident Premium,Y
+PRD05,Health Basic,Y
+PRD06,Health Plus,Y
+PRD07,Cancer Basic,Y
+PRD08,Cancer Premium,Y
+PRD09,Disability Basic,Y
+PRD10,Disability Premium,Y

@@ -1,0 +1,63 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: main
+    description: "Raw data from the source system"
+    tables:
+      - name: policies
+        description: "Table containing insurance policies"
+        columns:
+          - name: policy_id
+            tests:
+              - not_null
+              - unique
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+
+      - name: coverages
+        description: "Table containing coverage details for policies"
+        columns:
+          - name: coverage_id
+            tests:
+              - not_null
+
+      - name: insureds
+        description: "Table containing information about insured individuals"
+        columns:
+          - name: insured_id
+            tests:
+              - not_null
+              - unique
+
+      - name: claims
+        description: "Table containing insurance claims"
+        columns:
+          - name: claim_id
+            tests:
+              - not_null
+              - unique
+
+      - name: policy_status_history
+        description: "Table containing the history of policy status changes"
+        columns:
+          - name: policy_id
+            tests:
+              - not_null
+
+      - name: premiums
+        description: "Table containing premium payment information"
+        columns:
+          - name: premium_id
+            tests:
+              - not_null
+              - unique
+
+      - name: products
+        description: "Table containing information about insurance products"
+        columns:
+          - name: product_id 
+            tests:
+              - not_null
+              - unique

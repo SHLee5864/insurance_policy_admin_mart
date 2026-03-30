@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_policy_status_history
+    description: "Staging layer for policy status history data. 1 row per policy_id."
+    columns:
+      - name: policy_id
+        tests:
+          - unique
+          - not_null
+
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['active', 'cancelled', 'expired', 'pending']
+      - name: start_date
+        tests:
+          - not_null
+      - name: end_date
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "end_date >= start_date"
+      - name: updated_at
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "updated_at >= start_date"

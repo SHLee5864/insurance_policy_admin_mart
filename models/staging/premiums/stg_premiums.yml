@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_premiums
+    description: "Staging layer for premium data. 1 row per premium_id."
+    columns:
+      - name: premium_id
+        tests:
+          - not_null
+          - unique
+
+      - name: policy_id
+        tests:
+          - not_null
+          - relationships:
+                to: ref('stg_policies')
+                field: policy_id
+
+      - name: amount
+        tests:
+          - not_null
+
+      - name: payment_date
+        tests:
+          - not_null
+
+      - name: payment_method
+        tests:
+          - not_null
+      - name: active_year
+        tests:
+          - not_null

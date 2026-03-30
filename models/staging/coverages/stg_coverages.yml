@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: stg_coverages
+    description: "Staging layer for coverage data. 1 row per policy_id + coverage_id."
+    columns:
+      - name: policy_id
+        tests:
+          - not_null
+
+      - name: coverage_id
+        tests:
+          - not_null
+
+      - name: coverage_type
+        tests:
+          - not_null
+
+      - name: coverage_limit
+        tests:
+          - not_null
+
+      - name: deductible
+        tests:
+          - not_null
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - policy_id
+            - coverage_id

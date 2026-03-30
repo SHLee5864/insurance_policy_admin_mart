@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: stg_policies
+    description: "Staging layer for policy data. 1 row per policy_id."
+    columns:
+      - name: policy_id
+        tests:
+          - unique
+          - not_null
+      - name: insured_id
+        tests:
+          - not_null
+          - relationship:
+              to: ref('stg_insureds')
+              field: insured_id
+      - name: product_id
+        tests:
+          - not_null
+          - relationship:
+              to: ref('stg_products')
+              field: product_id
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['active', 'cancelled', 'expired', 'pending']
+      - name: effective_date
+        tests:
+          - not_null
+      - name: expiry_date
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "expiry_date >= effective_date"
+      - name: updated_at
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "updated_at >= effective_date"

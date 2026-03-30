@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: int_policy_portfolio
+    description: "Intermediate layer for the policy portfolio data."
+    columns:
+      - name: policy_id
+        tests:
+          - not_null
+      - name: product_id
+        tests:
+          - not_null
+      - name: insured_id
+        tests:
+          - not_null
+      - name: insured_name
+        tests:
+          - not_null
+      - name: insured_gender
+        tests:
+          - not_null
+      - name: insured_region
+        tests:
+          - not_null
+      - name: insured_age_group
+        tests:
+          - not_null
