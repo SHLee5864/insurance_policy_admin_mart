@@ -1,30 +1,79 @@
 📌 Insurance Policy Admin Mart — Projet dbt
 
-Ce projet dbt construit un data mart analytique pour la gestion 
-des polices d'assurance, en s'appuyant sur une architecture 
-modulaire RAW → STAGING → INTERMEDIATE → MART.
+Ce projet dbt construit un data mart analytique dédié à la gestion des polices d’assurance.  
+L’architecture suit une approche modulaire et scalable : **RAW → STAGING → INTERMEDIATE → MART**,  
+avec un accent fort sur la qualité des données, la traçabilité et la logique métier.
 
 ---
 
-🧱 Objectifs
+🧱 Objectifs du projet
 
-- Centraliser les données de polices, primes, sinistres, 
-  assurés et garanties
-- Fournir une base fiable pour les KPI d'assurance 
-  (loss ratio, frequency, severity)
-- Préparer une architecture extensible vers IFRS17
+- Centraliser les données de polices, assurés, garanties, primes et sinistres  
+- Construire une base analytique fiable pour les KPI d’assurance  
+  (loss ratio, frequency, severity, couverture)  
+- Mettre en place une architecture extensible vers des besoins avancés  
+  tels que **IFRS17**, la segmentation client ou l’analyse de portefeuille  
+- Démontrer une modélisation en couches conforme aux bonnes pratiques dbt
 
 ---
 
 🏗️ Architecture
 
-RAW → STAGING → INTERMEDIATE → MART
+🌱 RAW (SEEDS)
+   ├─ policies.csv
+   ├─ premiums.csv
+   ├─ claims.csv
+   ├─ insureds.csv
+   ├─ coverages.csv
+   └─ policy_status_history.csv
+        │
+        ▼
+🔵 STAGING — Normalisation & Typage
+   ├─ stg_policies
+   ├─ stg_premiums
+   ├─ stg_claims
+   ├─ stg_insureds
+   ├─ stg_coverages
+   └─ stg_policy_status_history
+        │
+        ▼
+🟣 INTERMEDIATE — Logique métier
+   ├─ int_policy_status_history
+   ├─ int_policy_latest
+   ├─ int_policy_premiums
+   ├─ int_policy_claims
+   ├─ int_policy_coverages
+   ├─ int_policy_portfolio
+   └─ int_policy_portfolio_enriched
+        │
+        ▼
+🟠 MART — KPI analytiques
+   ├─ mrt_policy_portfolio_summary
+   ├─ mrt_policy_coverage_summary
+   └─ mrt_policy_status_timeline
 
-**STAGING** — Normalisation, typage, nettoyage
-- stg_policies / stg_premiums / stg_claims
-- stg_insureds / stg_coverages / stg_policy_status_history
+🔹 RAW  
+Sources brutes (CSV seeds dans ce projet).  
+En production : connecteurs vers systèmes de gestion (policy admin, claims, billing).
 
-**INTERMEDIATE** — Logique métier
+🔹 STAGING — Normalisation & typage  
+Objectif : nettoyer, typer et standardiser les données.
+
+Modèles principaux :
+- `stg_policies`
+- `stg_premiums`
+- `stg_claims`
+- `stg_insureds`
+- `stg_coverages`
+- `stg_policy_status_history`
+
+Actions :
+- cast des dates  
+- harmonisation des statuts  
+- suppression des doublons  
+- validation des clés primaires
+
+🔹 INTERMEDIATE — Logique métier
 
 | Modèle | Rôle | Décision de conception |
 |--------|------|----------------------|
@@ -36,13 +85,78 @@ RAW → STAGING → INTERMEDIATE → MART
 | int_policy_portfolio | Jointure police–assuré + segmentation | Attributs statiques uniquement |
 | int_policy_portfolio_enriched | Enrichissement avec agrégats | Primes / sinistres / garanties ajoutés ici pour réutilisation dans mart |
 
-**MART** — KPI analytiques
+🔹 MART — KPI analytiques
 
 | Modèle | Statut | Contenu |
 |--------|--------|---------|
 | mrt_policy_portfolio_summary | 🔧 En développement | Loss ratio, frequency, severity par produit/segment |
 | mrt_policy_coverage_summary | 🔧 En développement | Analyse des garanties |
 | mrt_policy_status_timeline | 🔧 En développement | Suivi des transitions de statut |
+
+---
+
+🌱 RAW
+│
+├─ stg_policies
+├─ stg_insureds
+├─ stg_premiums
+├─ stg_claims
+├─ stg_coverages
+└─ stg_policy_status_history
+        │
+        ▼
+🟣 INTERMEDIATE
+│
+├─ int_policy_status_history ← stg_policy_status_history
+├─ int_policy_latest ← int_policy_status_history
+├─ int_policy_premiums ← stg_premiums + int_policy_latest
+├─ int_policy_claims ← stg_claims + int_policy_latest
+├─ int_policy_coverages ← stg_coverages
+├─ int_policy_portfolio ← stg_policies + stg_insureds
+└─ int_policy_portfolio_enriched
+        ← int_policy_portfolio + premiums + claims + coverages
+        │
+        ▼
+🟠 MART
+│
+├─ mrt_policy_portfolio_summary ← enriched
+├─ mrt_policy_coverage_summary ← coverages
+└─ mrt_policy_status_timeline ← status_history
+
+---
+
+📏 Grain des modèles
+
+La définition du grain est essentielle pour garantir la cohérence analytique et la qualité des données.  
+Chaque modèle du projet respecte un grain clair et documenté :
+
+🔹 STAGING
+| Modèle | Grain |
+|--------|--------|
+| stg_policies | 1 ligne = 1 police |
+| stg_insureds | 1 ligne = 1 assuré |
+| stg_premiums | 1 ligne = 1 prime |
+| stg_claims | 1 ligne = 1 sinistre |
+| stg_coverages | 1 ligne = 1 garantie |
+| stg_policy_status_history | 1 ligne = 1 changement de statut |
+
+🔹 INTERMEDIATE
+| Modèle | Grain |
+|--------|--------|
+| int_policy_status_history | 1 ligne = 1 période de statut (start_date → end_date) |
+| int_policy_latest | 1 ligne = 1 police (statut courant) |
+| int_policy_premiums | 1 ligne = 1 prime active |
+| int_policy_claims | 1 ligne = 1 sinistre actif |
+| int_policy_coverages | 1 ligne = 1 garantie par police |
+| int_policy_portfolio | 1 ligne = 1 police (vue enrichie assuré) |
+| int_policy_portfolio_enriched | 1 ligne = 1 police (avec agrégats) |
+
+🔹 MART
+| Modèle | Grain |
+|--------|--------|
+| mrt_policy_portfolio_summary | 1 ligne = 1 segment / produit / période |
+| mrt_policy_coverage_summary | 1 ligne = 1 type de garantie / période |
+| mrt_policy_status_timeline | 1 ligne = 1 transition de statut |
 
 ---
 
@@ -59,76 +173,85 @@ RAW → STAGING → INTERMEDIATE → MART
 
 🧪 Qualité des données
 
-- Tests not_null / unique sur tous les modèles
-- Tests de relation entre couches
-- Documentation YAML complète
+La qualité des données est assurée via une stratégie de tests complète :
+
+✔ Tests automatiques dbt
+- `unique` sur les clés primaires  
+- `not_null` sur les champs critiques  
+- `accepted_values` sur les statuts  
+- `relationships` entre les couches (lorsque supporté)
+
+✔ Tests personnalisés (macros)
+- `expiry_date_after_effective_date`  
+- `updated_at_after_effective_date`  
+
+✔ Documentation YAML
+Chaque modèle est documenté avec :
+- description  
+- grain  
+- colonnes + tests  
+- dépendances  
+
+---
+
+🧑 INSUREDS
+   • insured_id (PK)
+   • name
+   • birth_date
+        │ 1:N
+        ▼
+📄 POLICIES
+   • policy_id (PK)
+   • insured_id (FK)
+   • product_id (FK)
+   • effective_date
+   • expiry_date
+   • status
+        │ 1:N
+        ▼
+💰 PREMIUMS
+   • premium_id (PK)
+   • policy_id (FK)
+   • premium_amount
+   • premium_date
+
+        │ 1:N
+        ▼
+⚠️ CLAIMS
+   • claim_id (PK)
+   • policy_id (FK)
+   • claim_amount
+   • claim_date
+
+        │ 1:N
+        ▼
+📊 POLICY_STATUS_HISTORY
+   • policy_id (FK)
+   • status
+   • start_date
+   • end_date (calculated)
 
 ---
 
 ⚠️ Limites connues
 
-- Données sources : fichiers CSV (seed) — pas de connexion 
-  à un système source réel
-- updated_at en type date : en production, ce serait un 
-  timestamp (élimine les doublons intra-journaliers)
-- mrt_policy_status_timeline : en cours de développement
+- Données sources basées sur des fichiers CSV (seeds)  
+  → en production, une connexion à un système source serait nécessaire  
+- `updated_at` typé en `date` dans les seeds  
+  → en production : `timestamp` pour gérer les mises à jour intra-journalières  
+- Modèles MART encore en développement (structure prête, logique à compléter)
 
 ---
 
 🚀 Exécution
 
+Pour exécuter l’ensemble du pipeline :
+
+```bash
 dbt build
 
 ---
 
-🇬🇧 English version
-
-**Insurance Policy Admin Mart (dbt)**
-
-A dbt project building an analytical data mart for insurance 
-policy management.
-
-**Architecture**: RAW → STAGING → INTERMEDIATE → MART
-
-**Key design decisions**
-- `int_policy_latest` references staging directly to avoid 
-  dependency on `int_policy_status_history` — two models, 
-  two distinct purposes
-- Premium and claim models intentionally filter on 
-  `active` status — scope is current portfolio analysis
-- `int_policy_portfolio_enriched` separates static attributes 
-  (portfolio) from aggregated metrics (enriched) for mart reuse
-
-**KPIs**: Loss ratio · Frequency · Severity · Coverage count
-
-**Known limitations**
-- Seed CSV data (no live source connection)
-- `updated_at` is date type — production would use timestamp
-- `mrt_policy_status_timeline` in progress
-
-dbt build
-
----
-
-🇰🇷 한국어
-
-**보험 Policy Admin Mart (dbt)**
-
-보험 계약 데이터를 기반으로 분석용 데이터 마트를 구축하는 
-dbt 프로젝트.
-
-**핵심 설계 결정**
-- `int_policy_latest`는 stg 직접 참조 — `int_policy_status_history`와 
-  의존성을 의도적으로 분리
-- 보험료/청구 모델은 `active` 계약만 필터링 — 현재 포트폴리오 
-  분석이 목적
-- `enriched` 레이어에서 집계 지표 분리 — mart 재사용성 확보
-
-**KPI**: 손해율 · 빈도 · 심도 · 담보 개수
-
-**한계점**
-- seed CSV 데이터 (실제 소스 연결 없음)
-- `updated_at` date 타입 — 실무에서는 timestamp
-- `mrt_policy_status_timeline` 개발 예정
-
-dbt build
+👤 Auteur
+Projet réalisé par Seokhee,
+Insurance/Reinsurance Data & Analytics Specialist — en transition vers Analytics Engineering.
