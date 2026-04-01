@@ -1,27 +1,28 @@
-{{
-    config(
-        materialized='table'
-    )
-}}
-
 with portfolio as (
     select
         policy_id,
-        product_id,
-        insured_gender,
-        insured_region,
-        insured_age_group,
-        policy_status
-    from {{ ref('int_policy_portfolio') }}
+        policy_status,
+        start_date,
+        end_date,
+        updated_at
+    from {{ ref('int_policy_status_history') }}
 ),
 
 calendar as (
-    -- premiums와 claims의 union으로 월별 timeline 생성
     select distinct policy_id, premium_year as year, premium_month as month
     from {{ ref('int_policy_premiums') }}
     union
     select distinct policy_id, claim_year as year, claim_month as month
     from {{ ref('int_policy_claims') }}
+),
+
+calendar_dates as (
+    select
+        policy_id,
+        year,
+        month,
+        make_date(year, month, 1) as month_start
+    from calendar
 )
 
 select
@@ -29,12 +30,13 @@ select
     cal.year,
     cal.month,
 
-    p.product_id,
-    p.insured_gender,
-    p.insured_region,
-    p.insured_age_group,
+    p.policy_status,
+    p.start_date,
+    p.end_date,
+    p.updated_at
 
-    p.policy_status
-
-from calendar cal
-left join portfolio p using (policy_id)
+from calendar_dates cal
+left join portfolio p
+    on cal.policy_id = p.policy_id
+   and cal.month_start >= p.start_date
+   and (p.end_date is null or cal.month_start <= p.end_date)

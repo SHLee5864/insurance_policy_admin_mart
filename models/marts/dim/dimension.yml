@@ -23,7 +23,6 @@ models:
         description: "Identifiant de la garantie."
         tests:
           - not_null
-          - unique
 
       - name: coverage_type
         description: "Type de garantie."

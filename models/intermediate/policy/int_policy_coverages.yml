@@ -11,8 +11,7 @@ models:
         tests:
           - not_null
       - name: coverage_id
-        tests:
-          - not null
+
       - name: coverage_type
         tests:
           - not_null

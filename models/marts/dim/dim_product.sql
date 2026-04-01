@@ -3,5 +3,5 @@
 select distinct
     product_id,
     product_name,
-    product_category
-from {{ ref('stg_policies') }}
+    renewal_flag
+from {{ ref('stg_products') }}

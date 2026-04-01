@@ -20,7 +20,7 @@ coverages as (
         coverage_id,
         coverage_type,
         coverage_limit,
-        coverage_deductible
+        deductible as coverage_deductible
     from {{ ref('int_policy_coverages') }}
 )
 

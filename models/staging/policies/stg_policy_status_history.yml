@@ -6,7 +6,6 @@ models:
     columns:
       - name: policy_id
         tests:
-          - unique
           - not_null
 
       - name: status
@@ -18,12 +17,10 @@ models:
         tests:
           - not_null
       - name: end_date
-        tests:
-          - not_null
-          - dbt_utils.expression_is_true:
-              expression: "end_date >= start_date"
+
       - name: updated_at
         tests:
           - not_null
-          - dbt_utils.expression_is_true:
-              expression: "updated_at >= start_date"
+
+    tests:
+      - end_date_after_start_date

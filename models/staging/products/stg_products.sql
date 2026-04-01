@@ -8,5 +8,5 @@
 select
     product_id,
     product_name,
-    renewal_flag,
+    renewal_flag
 from {{ ref('products') }}

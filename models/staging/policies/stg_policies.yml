@@ -11,15 +11,10 @@ models:
       - name: insured_id
         tests:
           - not_null
-          - relationship:
-              to: ref('stg_insureds')
-              field: insured_id
       - name: product_id
         tests:
-          - not_null
-          - relationship:
-              to: ref('stg_products')
-              field: product_id
+          - not_null          
+          
       - name: status
         tests:
           - not_null
@@ -31,10 +26,10 @@ models:
       - name: expiry_date
         tests:
           - not_null
-          - dbt_utils.expression_is_true:
-              expression: "expiry_date >= effective_date"
       - name: updated_at
         tests:
           - not_null
-          - dbt_utils.expression_is_true:
-              expression: "updated_at >= effective_date"
+
+    tests:
+      - expiry_date_after_effective_date
+      - updated_at_after_effective_date

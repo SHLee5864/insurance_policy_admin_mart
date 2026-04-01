@@ -3,6 +3,7 @@ version: 2
 models:
   - name: int_policy_latest
     description: "Intermediate layer for the latest policy status data. 1 row per policy_id."
+
     columns:
       - name: policy_id
         tests:
@@ -14,13 +15,16 @@ models:
           - not_null
           - accepted_values:
               values: ['active', 'cancelled', 'expired', 'pending']
+
       - name: start_date
         tests:
           - not_null
+
       - name: end_date
-        tests:
-          - dbt_utils.expression_is_true:
-              expression: "end_date >= start_date"
+  
       - name: updated_at
         tests:
           - not_null
+    
+    tests:
+      - end_date_after_start_date

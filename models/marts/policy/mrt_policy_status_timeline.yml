@@ -22,17 +22,14 @@ models:
         tests:
           - not_null
 
-      - name: product_id
+      - name: policy_status
         description: "Produit associé au contrat."
 
-      - name: insured_gender
-        description: "Genre de l’assuré."
+      - name: start_date
+        description: "Date de début du statut du contrat."
 
-      - name: insured_region
-        description: "Région de l’assuré."
+      - name: end_date
+        description: "Date de fin du statut du contrat."
 
-      - name: insured_age_group
-        description: "Tranche d’âge de l’assuré."
-
-      - name: policy_status
-        description: "Statut du contrat pour l’année/mois donné."
+      - name: updated_at
+        description: "Date de mise à jour du statut du contrat."
