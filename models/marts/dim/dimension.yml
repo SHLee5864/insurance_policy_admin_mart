@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: dim_product
+    description: "Dimension produit contenant les informations descriptives des produits."
+    columns:
+      - name: product_id
+        description: "Identifiant du produit."
+        tests:
+          - not_null
+          - unique
+
+      - name: product_name
+        description: "Nom du produit."
+
+      - name: product_category
+        description: "Catégorie du produit."
+
+  - name: dim_coverage
+    description: "Dimension des garanties (coverages)."
+    columns:
+      - name: coverage_id
+        description: "Identifiant de la garantie."
+        tests:
+          - not_null
+          - unique
+
+      - name: coverage_type
+        description: "Type de garantie."
+
+      - name: coverage_limit
+        description: "Plafond de garantie."
+
+      - name: coverage_deductible
+        description: "Franchise de garantie."

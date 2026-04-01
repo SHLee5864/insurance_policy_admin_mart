@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: mrt_policy_coverage_summary
+    description: >
+      Table mart décrivant les garanties (coverages) associées à chaque contrat.
+      Aucune donnée financière n’est incluse. Structure pure pour analyse BI.
+
+    columns:
+      - name: policy_id
+        description: "Identifiant du contrat."
+        tests:
+          - not_null
+
+      - name: coverage_id
+        description: "Identifiant de la garantie."
+        tests:
+          - not_null
+
+      - name: coverage_type
+        description: "Type de garantie."
+
+      - name: coverage_limit
+        description: "Plafond de garantie."
+
+      - name: coverage_deductible
+        description: "Franchise de garantie."
+
+      - name: product_id
+        description: "Produit associé au contrat."
+
+      - name: insured_gender
+        description: "Genre de l’assuré."
+
+      - name: insured_region
+        description: "Région de l’assuré."
+
+      - name: insured_age_group
+        description: "Tranche d’âge de l’assuré."
