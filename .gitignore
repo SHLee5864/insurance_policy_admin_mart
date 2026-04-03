@@ -2,3 +2,4 @@ target/
 dbt_packages/
 dbt-env/
 .env
+dev.duckdb

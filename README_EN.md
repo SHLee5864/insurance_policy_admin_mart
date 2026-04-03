@@ -1,256 +1,311 @@
-📌 Insurance Policy Admin Mart — Projet dbt
+# 📌 Insurance Policy Admin Mart — dbt Project
 
-This dbt project builds an analytical data mart for insurance policy administration.  
+This dbt project builds an **analytical data mart** for insurance policy administration.  
 The architecture follows a modular and scalable approach: **RAW → STAGING → INTERMEDIATE → MART**,  
-with strong emphasis on data quality, business logic consistency, and clear lineage.
+with strong emphasis on data quality, traceability, and business logic consistency.
 
 ---
 
-🧱 Objectifs du projet
+## 🧱 Project Goals
 
-- Centralize data related to policies, insureds, coverages, premiums, and claims  
-- Provide a reliable analytical foundation for key insurance KPIs  
-  (loss ratio, frequency, severity, coverage metrics)  
-- Prepare an extensible architecture for advanced use cases such as **IFRS17**  
-- Demonstrate layered data modeling aligned with dbt best practices
+- Centralize data across policies, insureds, products, coverages, premiums, and claims  
+- Provide a reliable analytical foundation for key insurance KPIs (loss ratio, frequency, severity, coverage metrics)  
+- Build an extensible architecture for advanced use cases such as **IFRS17**, client segmentation, and portfolio analysis  
+- Demonstrate layered data modeling aligned with dbt best practices  
 
 ---
 
-🏗️ Architecture
+## 🛠️ Tech Stack
 
+| Component | Technology |
+|-----------|-----------|
+| Transformation | dbt Core |
+| Database | DuckDB |
+| Packages | dbt-utils 1.2.0 |
+| Source Data | CSV seeds (generated via `generate.py`) |
+
+---
+
+## 🏗️ Architecture
+
+```
 🌱 RAW (SEEDS)
    ├─ policies.csv
    ├─ premiums.csv
    ├─ claims.csv
    ├─ insureds.csv
    ├─ coverages.csv
+   ├─ products.csv
    └─ policy_status_history.csv
         │
         ▼
-🔵 STAGING — Normalisation & Typage
+🔵 STAGING — Standardization & Typing
    ├─ stg_policies
    ├─ stg_premiums
    ├─ stg_claims
    ├─ stg_insureds
    ├─ stg_coverages
+   ├─ stg_products
    └─ stg_policy_status_history
         │
         ▼
-🟣 INTERMEDIATE — Logique métier
+🟣 INTERMEDIATE — Business Logic
    ├─ int_policy_status_history
    ├─ int_policy_latest
    ├─ int_policy_premiums
    ├─ int_policy_claims
    ├─ int_policy_coverages
-   ├─ int_policy_portfolio
-   └─ int_policy_portfolio_enriched
+   └─ int_policy_portfolio
         │
         ▼
-🟠 MART — KPI analytiques
+🟠 MART — Analytical KPIs & Dimensions
    ├─ mrt_policy_portfolio_summary
    ├─ mrt_policy_coverage_summary
-   └─ mrt_policy_status_timeline
+   ├─ mrt_policy_status_timeline
+   ├─ dim_coverage
+   └─ dim_product
+```
 
-🔹 RAW  
-Raw source data (CSV seeds in this project).  
+---
+
+## 📂 Project Structure
+
+```
+insurance_policy_admin_mart/
+├── models/
+│   ├── intermediate/
+│   │   └── policy/
+│   │       ├── int_policy_claims.sql / .yml
+│   │       ├── int_policy_coverages.sql / .yml
+│   │       ├── int_policy_latest.sql / .yml
+│   │       ├── int_policy_portfolio.sql / .yml
+│   │       ├── int_policy_premiums.sql / .yml
+│   │       └── int_policy_status_history.sql / .yml
+│   ├── marts/
+│   │   ├── dim/
+│   │   │   ├── dim_coverage.sql
+│   │   │   ├── dim_product.sql
+│   │   │   └── dimension.yml
+│   │   └── policy/
+│   │       ├── mrt_policy_portfolio_summary.sql / .yml
+│   │       ├── mrt_policy_coverage_summary.sql / .yml
+│   │       └── mrt_policy_status_timeline.sql / .yml
+│   ├── sources/
+│   │   └── source.yml
+│   └── staging/
+│       ├── claims/
+│       ├── coverages/
+│       │   ├── stg_coverages.sql / .yml
+│       ├── insureds/
+│       ├── policies/
+│       │   ├── stg_policies.sql / .yml
+│       │   ├── stg_policy_status_history.sql / .yml
+│       ├── premiums/
+│       └── products/
+│           ├── stg_products.sql / .yml
+├── seeds/
+│   ├── claims.csv
+│   ├── coverages.csv
+│   ├── insureds.csv
+│   ├── policies.csv
+│   ├── policy_status_history.csv
+│   ├── premiums.csv
+│   └── products.csv
+├── tests/
+├── macros/
+├── analyses/
+├── snapshots/
+├── generate.py
+├── dbt_project.yml
+├── packages.yml
+└── README.md
+```
+
+---
+
+## 🔹 Layer Details
+
+### RAW (Seeds)
+
+Raw source data as CSV files, generated via `generate.py`.  
 In production: connectors to policy admin, claims, and billing systems.
 
-🔹 STAGING — Standardization & Typing  
+### STAGING — Standardization & Typing
+
 Purpose: clean, normalize, and type the raw data.
 
-Main models:
-- `stg_policies`
-- `stg_premiums`
-- `stg_claims`
-- `stg_insureds`
-- `stg_coverages`
-- `stg_policy_status_history`
+| Model | Grain |
+|-------|-------|
+| `stg_policies` | 1 row = 1 policy |
+| `stg_insureds` | 1 row = 1 insured |
+| `stg_premiums` | 1 row = 1 premium |
+| `stg_claims` | 1 row = 1 claim |
+| `stg_coverages` | 1 row = 1 coverage |
+| `stg_products` | 1 row = 1 product |
+| `stg_policy_status_history` | 1 row = 1 status change |
 
-Key actions:
-- cast des dates  
-- harmonisation des statuts  
-- suppression des doublons  
-- validation des clés primaires
+Key actions: date casting, status harmonization, deduplication, primary key validation.
 
-🔹 INTERMEDIATE — Business Logic Layer
+### INTERMEDIATE — Business Logic
 
-| Model | Purpose | Design Decision |
-|--------|------|----------------------|
-| int_policy_latest | Statut courant par police | Référence stg directement — indépendant de int_policy_status_history pour minimiser les dépendances |
-| int_policy_status_history | Historique complet des statuts | lead() pour calculer end_date absent dans la source |
-| int_policy_premiums | Primes des contrats actifs | Filtré sur policy_status = 'active' — périmètre intentionnel |
-| int_policy_claims | Sinistres des contrats actifs | Même périmètre que int_policy_premiums |
-| int_policy_coverages | Garanties par police | — |
-| int_policy_portfolio | Jointure police–assuré + segmentation | Attributs statiques uniquement |
-| int_policy_portfolio_enriched | Enrichissement avec agrégats | Primes / sinistres / garanties ajoutés ici pour réutilisation dans mart |
+| Model | Purpose | Grain | Design Decision |
+|-------|---------|-------|-----------------|
+| `int_policy_status_history` | Full status history | 1 row = 1 status period (start → end) | `lead()` to compute `end_date` absent from source |
+| `int_policy_latest` | Current status per policy | 1 row = 1 policy | References `stg_policy_status_history` directly — independent from `int_policy_status_history` to minimize dependencies |
+| `int_policy_premiums` | Premiums for active contracts | 1 row = 1 active premium | Filtered on `policy_status = 'active'` — intentional scope |
+| `int_policy_claims` | Claims for active contracts | 1 row = 1 active claim | Same scope as `int_policy_premiums` |
+| `int_policy_coverages` | Coverages per policy | 1 row = 1 coverage per policy | — |
+| `int_policy_portfolio` | Policy–insured join + segmentation | 1 row = 1 policy (enriched view) | Static attributes only |
 
-🔹 MART — Analytical KPIs
+### MART — Analytical KPIs & Dimensions
 
-| Model | Status | Content |
-|--------|--------|---------|
-| mrt_policy_portfolio_summary | 🔧 En développement | Loss ratio, frequency, severity par produit/segment |
-| mrt_policy_coverage_summary | 🔧 En développement | Analyse des garanties |
-| mrt_policy_status_timeline | 🔧 En développement | Suivi des transitions de statut |
-
-🌱 RAW
-│
-├─ stg_policies
-├─ stg_insureds
-├─ stg_premiums
-├─ stg_claims
-├─ stg_coverages
-└─ stg_policy_status_history
-        │
-        ▼
-🟣 INTERMEDIATE
-│
-├─ int_policy_status_history ← stg_policy_status_history
-├─ int_policy_latest ← int_policy_status_history
-├─ int_policy_premiums ← stg_premiums + int_policy_latest
-├─ int_policy_claims ← stg_claims + int_policy_latest
-├─ int_policy_coverages ← stg_coverages
-├─ int_policy_portfolio ← stg_policies + stg_insureds
-└─ int_policy_portfolio_enriched
-        ← int_policy_portfolio + premiums + claims + coverages
-        │
-        ▼
-🟠 MART
-│
-├─ mrt_policy_portfolio_summary ← enriched
-├─ mrt_policy_coverage_summary ← coverages
-└─ mrt_policy_status_timeline ← status_history
+| Model | Content | Grain |
+|-------|---------|-------|
+| `mrt_policy_portfolio_summary` | Loss ratio, frequency, severity by product/segment | 1 row = 1 segment / product / period |
+| `mrt_policy_coverage_summary` | Coverage analysis by type | 1 row = 1 coverage type / period |
+| `mrt_policy_status_timeline` | Status transition tracking | 1 row = 1 status transition |
+| `dim_coverage` | Coverage dimension | 1 row = 1 coverage |
+| `dim_product` | Product dimension | 1 row = 1 product |
 
 ---
 
-📏 Model Grain
+## 📊 Lineage (DAG)
 
-Defining the grain is essential to ensure analytical consistency and reliable aggregations.  
-Each model in the project follows a clearly defined grain:
+```
+🌱 RAW (seeds)
+│
+├─ stg_policies ─────────────────────┐
+├─ stg_insureds ─────────────────────┤
+├─ stg_premiums ──────────┐          │
+├─ stg_claims ────────────┤          │
+├─ stg_coverages ─────────┤          │
+├─ stg_products           │          │
+└─ stg_policy_status_history ──┬─────┤
+                               │     │
+                    ┌──────────┘     │
+                    │                │
+                    ▼                │
+   int_policy_status_history         │
+          │                          │
+          ▼                          │
+   mrt_policy_status_timeline        │
+                                     │
+   stg_policy_status_history ────────┤
+                    │                │
+                    ▼                │
+             int_policy_latest       │
+                    │                │
+         ┌─────────┼────────┐       │
+         ▼         ▼        ▼       ▼
+  int_policy   int_policy   int_policy
+  _premiums    _claims      _portfolio
+         │         │              │
+         └────┬────┘              │
+              ▼                   ▼
+  mrt_policy_portfolio    int_policy_coverages
+  _summary                        │
+                                  ▼
+                       mrt_policy_coverage
+                       _summary
 
-🔹 STAGING
-| Model | Grain |
-|--------|--------|
-| stg_policies | 1 row = 1 policy |
-| stg_insureds | 1 row = 1 insured |
-| stg_premiums | 1 row = 1 premium |
-| stg_claims | 1 row = 1 claim |
-| stg_coverages | 1 row = 1 coverage |
-| stg_policy_status_history | 1 row = 1 status change |
-
-🔹 INTERMEDIATE
-| Model | Grain |
-|--------|--------|
-| int_policy_status_history | 1 row = 1 status period (start_date → end_date) |
-| int_policy_latest | 1 row = 1 policy (current status) |
-| int_policy_premiums | 1 row = 1 active premium |
-| int_policy_claims | 1 row = 1 active claim |
-| int_policy_coverages | 1 row = 1 coverage per policy |
-| int_policy_portfolio | 1 row = 1 policy (joined with insured) |
-| int_policy_portfolio_enriched | 1 row = 1 policy (with aggregates) |
-
-🔹 MART
-| Model | Grain |
-|--------|--------|
-| mrt_policy_portfolio_summary | 1 row = 1 segment / product / period |
-| mrt_policy_coverage_summary | 1 row = 1 coverage type / period |
-| mrt_policy_status_timeline | 1 row = 1 status transition |
-
+  stg_coverages ──► dim_coverage
+  stg_products  ──► dim_product
+```
 
 ---
 
-📊 Available KPIs
+## 📊 Available KPIs
 
 | KPI | Formula | Source Model |
-|-----|---------|---------------|
-| Loss Ratio | Claims / Premium | mrt_policy_portfolio_summary |
-| Frequency | Nb sinistres / Nb polices | mrt_policy_portfolio_summary |
-| Severity | Montant moyen / sinistre | mrt_policy_portfolio_summary |
-| Coverage Count | Nb garanties / police | mrt_policy_coverage_summary |
+|-----|---------|-------------|
+| Loss Ratio | Total claims / Total premiums | `mrt_policy_portfolio_summary` |
+| Frequency | Nb claims / Nb policies | `mrt_policy_portfolio_summary` |
+| Severity | Average amount per claim | `mrt_policy_portfolio_summary` |
+| Coverage Count | Nb coverages per policy | `mrt_policy_coverage_summary` |
 
 ---
 
-🧪 Data Quality Strategy
+## 🧪 Data Quality
 
-La qualité des données est assurée via une stratégie de tests complète :
+### Built-in dbt Tests
 
-✔ Built-in dbt tests
-- `unique` on primary keys  
-- `not_null` on critical fields  
-- `accepted_values` on status fields  
-- `relationships` across layers (when supported)
+- `unique` on primary keys
+- `not_null` on critical fields
+- `accepted_values` on status fields
+- `relationships` across layers
 
-✔ Custom tests (macros)
-- `expiry_date_after_effective_date`  
-- `updated_at_after_effective_date`  
+### Custom Tests (Macros)
 
-✔ YAML Documentation
-Each model includes:
-- description  
-- grain  
-- column-level documentation  
-- associated tests  
-- lineage  
+- `expiry_date_after_effective_date`
+- `updated_at_after_effective_date`
+
+### YAML Documentation
+
+Each model is documented with: description, grain, column-level documentation, associated tests, and lineage.
 
 ---
 
-⚠️ Known Limitations
+## 🗃️ Data Generation
 
-- Source data is based on CSV seeds  
-  → in production, a real source system connection would be required  
-- `updated_at` is typed as `date` in seeds  
-  → in production, this should be a `timestamp` to handle intra-day updates  
-- MART models are partially implemented (structure ready, logic to be completed)
+Seed data is generated via `generate.py`:
 
----
-
-🧑 INSUREDS
-   • insured_id (PK)
-   • name
-   • birth_date
-        │ 1:N
-        ▼
-📄 POLICIES
-   • policy_id (PK)
-   • insured_id (FK)
-   • product_id (FK)
-   • effective_date
-   • expiry_date
-   • status
-        │ 1:N
-        ▼
-💰 PREMIUMS
-   • premium_id (PK)
-   • policy_id (FK)
-   • premium_amount
-   • premium_date
-
-        │ 1:N
-        ▼
-⚠️ CLAIMS
-   • claim_id (PK)
-   • policy_id (FK)
-   • claim_amount
-   • claim_date
-
-        │ 1:N
-        ▼
-📊 POLICY_STATUS_HISTORY
-   • policy_id (FK)
-   • status
-   • start_date
-   • end_date (calculated)
+- ~30–50 active policies per month over 2023–2025
+- Monthly premiums for each active policy
+- Claims calibrated for a **realistic loss ratio of 85–105%** per product/year
+- 10 insurance products (life, accident, health, cancer, disability)
+- Status history with active → cancelled transitions
+- Multiple coverages per policy depending on product type
 
 ---
 
-🚀 Exécution
+## ⚠️ Known Limitations
 
-Run the full pipeline:
+- Source data is based on CSV seeds — in production, a real source system connection would be required
+- `updated_at` is typed as `date` in seeds — in production: `timestamp` for intra-day updates
+- Status transitions limited to active/cancelled — extensible to suspended, reinstated, expired
+
+---
+
+## 🚀 How to Run
+
+### Prerequisites
+
+- Python 3.8+
+- dbt Core with DuckDB adapter
+- Install: `pip install dbt-duckdb`
+
+### Configuration
+
+Add a profile in `~/.dbt/profiles.yml`:
+
+```yaml
+insurance_policy_admin_mart:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: dev.duckdb
+      threads: 4
+```
+
+### Run the Pipeline
 
 ```bash
+# Install dbt dependencies
+dbt deps
+
+# Load seeds + run models + run tests
 dbt build
+
+# Or step by step:
+dbt seed          # Load CSVs
+dbt run           # Run models
+dbt test          # Run tests
+```
 
 ---
 
-👤 Author
-Project created by Seokhee,
-Insurance/Reinsurance Data & Analytics Specialist transitioning into Analytics Engineering.
+## 👤 Author
+
+Project by **Sukhee Lee**  
+Insurance / Reinsurance Data & Analytics Specialist — transitioning into Analytics Engineering.
